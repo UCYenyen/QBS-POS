@@ -7,8 +7,8 @@ export function useActivePageLabel() {
   switch (pathname) {
     case "/dashboard":
       return "Dashboard"
-    case "/login":
-      return "Login"
+    case "/signin":
+      return "signin"
     case "/signup":
       return "Signup"
     case "/reports":

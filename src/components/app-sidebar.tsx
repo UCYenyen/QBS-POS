@@ -17,13 +17,9 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { LayoutDashboardIcon, ListIcon, UsersIcon, Settings2Icon, CircleHelpIcon, FileChartColumnIcon, CommandIcon, ComputerIcon } from "lucide-react"
+import { useSession } from "@/lib/auth-client"
 
 const data = {
-  user: {
-    name: "Unknown User",
-    email: "",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -89,6 +85,14 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: session } = useSession()
+
+  const user = {
+    name: session?.user?.name ?? "Loading...",
+    email: session?.user?.email ?? "",
+    avatar: session?.user?.image ?? "",
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -112,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )
