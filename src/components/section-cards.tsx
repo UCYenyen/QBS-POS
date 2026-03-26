@@ -18,13 +18,13 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+            $0.00
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <TrendingUpIcon
               />
-              +12.5%
+              +0%
             </Badge>
           </CardAction>
         </CardHeader>
@@ -34,7 +34,7 @@ export function SectionCards() {
             <TrendingUpIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Visitors for the last 6 months
+            Sales for the last 30 Days
           </div>
         </CardFooter>
       </Card>
@@ -42,19 +42,19 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>New Customers</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+            0
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <TrendingDownIcon
               />
-              -20%
+              -0%
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period{" "}
+            Down 0% this period{" "}
             <TrendingDownIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">
@@ -64,9 +64,9 @@ export function SectionCards() {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>Active Customers</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+            5,678
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
