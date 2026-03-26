@@ -1,7 +1,15 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { CheckIcon, ZapIcon, BuildingIcon, RocketIcon, Loader2Icon } from "lucide-react"
+import { useTransition } from "react"
+import { useRouter } from "next/navigation"
+import {
+  CheckIcon,
+  ZapIcon,
+  BuildingIcon,
+  RocketIcon,
+  Loader2Icon,
+  ArrowRightIcon,
+} from "lucide-react"
 import { toast } from "sonner"
 import {
   Card,
@@ -17,7 +25,7 @@ import { Separator } from "@/components/ui/separator"
 import { createSubscriptionCheckout } from "@/actions/subscription"
 
 // ---------------------------------------------------------------------------
-// Types (serialized from server — Decimal → number)
+// Types
 // ---------------------------------------------------------------------------
 
 export interface SerializedPlan {
@@ -33,9 +41,14 @@ export interface SerializedPlan {
 
 interface PricingCardsProps {
   plans: SerializedPlan[]
+  /** null when not authenticated or no store exists */
   storeId: string | null
   currentPlanTier: string | null
   currentStatus: string
+  /** Whether the visitor has a valid Better Auth session */
+  isAuthenticated: boolean
+  /** Show only paid plans (used inside the dashboard upgrade dialog) */
+  paidOnly?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -44,12 +57,7 @@ interface PricingCardsProps {
 
 const TIER_META: Record<
   string,
-  {
-    icon: React.ReactNode
-    description: string
-    highlighted: boolean
-    badge: string | null
-  }
+  { icon: React.ReactNode; description: string; highlighted: boolean; badge: string | null }
 > = {
   FREE: {
     icon: <ZapIcon className="size-5" />,
@@ -72,7 +80,7 @@ const TIER_META: Record<
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// PricingCards (list)
 // ---------------------------------------------------------------------------
 
 export function PricingCards({
@@ -80,38 +88,51 @@ export function PricingCards({
   storeId,
   currentPlanTier,
   currentStatus,
+  isAuthenticated,
+  paidOnly = false,
 }: PricingCardsProps) {
+  const visible = paidOnly ? plans.filter((p) => p.price > 0) : plans
+
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {plans.map((plan) => (
+      {visible.map((plan) => (
         <PricingCard
           key={plan.id}
           plan={plan}
           storeId={storeId}
           currentPlanTier={currentPlanTier}
           currentStatus={currentStatus}
+          isAuthenticated={isAuthenticated}
         />
       ))}
     </div>
   )
 }
 
+// ---------------------------------------------------------------------------
+// PricingCard (single)
+// ---------------------------------------------------------------------------
+
 function PricingCard({
   plan,
   storeId,
   currentPlanTier,
   currentStatus,
+  isAuthenticated,
 }: {
   plan: SerializedPlan
   storeId: string | null
   currentPlanTier: string | null
   currentStatus: string
+  isAuthenticated: boolean
 }) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   const meta = TIER_META[plan.tier] ?? TIER_META.FREE
   const isCurrentPlan = currentPlanTier === plan.tier
   const isActivePlan = isCurrentPlan && currentStatus === "ACTIVE"
+  const isFree = plan.price === 0
 
   const features = Array.isArray(plan.features)
     ? (plan.features as string[])
@@ -125,15 +146,40 @@ function PricingCard({
     maximumFractionDigits: 0,
   }).format(plan.price)
 
-  function handleCheckout() {
-    if (!storeId) {
-      toast.error("No store found. Please create a store first.")
-      return
-    }
+  // ── CTA handler ─────────────────────────────────────────────────────────
 
+  function handleCta() {
     startTransition(async () => {
+      // ── FREE plan: route to onboarding or sign-up ───────────────────────
+      if (isFree) {
+        if (!isAuthenticated) {
+          router.push("/signup?callbackUrl=/onboarding")
+          return
+        }
+        if (!storeId) {
+          router.push("/onboarding")
+          return
+        }
+        // Authenticated + already has store → just go to dashboard
+        router.push("/dashboard")
+        return
+      }
+
+      // ── Paid plan: must be authenticated with an existing store ─────────
+      if (!isAuthenticated) {
+        router.push("/signup?callbackUrl=/pricing")
+        return
+      }
+
+      if (!storeId) {
+        toast.error("Please create a store first before upgrading your plan.")
+        router.push("/onboarding")
+        return
+      }
+
       const result = await createSubscriptionCheckout(plan.id, storeId)
-      // If we reach here, the redirect didn't fire (only on error)
+      // redirect() is called inside the action on success; we only reach
+      // here on an explicit error return.
       if (result && !result.success) {
         toast.error(result.error)
       }
@@ -143,9 +189,7 @@ function PricingCard({
   return (
     <Card
       className={
-        meta.highlighted
-          ? "relative ring-2 ring-primary shadow-lg"
-          : "relative"
+        meta.highlighted ? "relative ring-2 ring-primary shadow-lg" : "relative"
       }
     >
       {meta.badge && (
@@ -163,10 +207,16 @@ function PricingCard({
         </div>
 
         <CardTitle className="text-3xl font-extrabold tabular-nums">
-          {formattedPrice}
-          <span className="text-base font-normal text-muted-foreground ml-1">
-            /{plan.interval === "YEARLY" ? "yr" : "mo"}
-          </span>
+          {isFree ? (
+            "Free"
+          ) : (
+            <>
+              {formattedPrice}
+              <span className="text-base font-normal text-muted-foreground ml-1">
+                /{plan.interval === "YEARLY" ? "yr" : "mo"}
+              </span>
+            </>
+          )}
         </CardTitle>
 
         <CardDescription>{meta.description}</CardDescription>
@@ -174,7 +224,6 @@ function PricingCard({
 
       <CardContent className="flex flex-col gap-4">
         <Separator />
-
         <ul className="space-y-2">
           <FeatureItem label={`Up to ${plan.maxBranches} branch(es)`} />
           <FeatureItem label={`Up to ${plan.maxUsers} team member(s)`} />
@@ -199,18 +248,19 @@ function PricingCard({
           <Button
             className="w-full"
             variant={meta.highlighted ? "default" : "outline"}
-            onClick={handleCheckout}
-            disabled={isPending || !storeId}
+            onClick={handleCta}
+            disabled={isPending}
           >
             {isPending ? (
               <>
                 <Loader2Icon className="size-4 animate-spin" />
-                Redirecting…
+                {isFree ? "Setting up…" : "Redirecting to payment…"}
               </>
-            ) : plan.price === 0 ? (
-              "Get Started Free"
             ) : (
-              "Subscribe Now"
+              <>
+                {isFree ? "Get Started Free" : "Subscribe Now"}
+                <ArrowRightIcon className="size-4" />
+              </>
             )}
           </Button>
         )}
@@ -218,6 +268,10 @@ function PricingCard({
     </Card>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function FeatureItem({ label }: { label: string }) {
   return (
