@@ -104,6 +104,9 @@ importers:
       vaul:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      xendit-node:
+        specifier: ^7.0.0
+        version: 7.0.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -4581,6 +4584,10 @@ packages:
   wsl-utils@0.3.1:
     resolution: {integrity: sha512-g/eziiSUNBSsdDJtCLB8bdYEUMj4jR7AGeUo96p/3dTafgjHhpF4RiCFPiRILwjQoDXx5MqkBr4fwWtR3Ky4Wg==}
     engines: {node: '>=20'}
+
+  xendit-node@7.0.0:
+    resolution: {integrity: sha512-atsCQ9femoWLu+hU5rY0TZ+ZhqSYbpTtABZN7rGMhhBh1xLhTuY1rgLfoaXzFiRt3eOQRqsew78wPUcQn1QckA==}
+    engines: {node: '>=18.0.0'}
 
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
@@ -9393,6 +9400,8 @@ snapshots:
     dependencies:
       is-wsl: 3.1.1
       powershell-utils: 0.1.0
+
+  xendit-node@7.0.0: {}
 
   xtend@4.0.2: {}
 
